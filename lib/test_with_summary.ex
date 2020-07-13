@@ -44,7 +44,7 @@ defmodule Mix.Tasks.TestWithSummary do
     {opts, files} = OptionParser.parse!(args, strict: @switches)
 
     {:ok, logfile} =
-      File.open("/Users/wanjal/dev/solveRepos/exunit-summarizer/task-log.txt", :write)
+      File.open("/Users/wanjal/dev/solveRepos/exunit-summarizer/task-log.txt", [:write])
 
     if not Mix.Task.recursing?() do
       IO.binwrite(logfile, inspect(files) <> " BANANA RUNNING non recursing")
