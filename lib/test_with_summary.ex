@@ -43,11 +43,8 @@ defmodule Mix.Tasks.TestWithSummary do
   def run(args) do
     {opts, files} = OptionParser.parse!(args, strict: @switches)
 
-    {:ok, logfile} =
-      File.open("/Users/wanjal/dev/solveRepos/exunit-summarizer/task-log.txt", [:write])
-
     if not Mix.Task.recursing?() do
-      IO.binwrite(logfile, inspect(files) <> " BANANA RUNNING non recursing")
+      print_file(inspect(files) <> " BANANA RUNNING non recursing")
       do_run(opts, args, files)
     else
       {files_in_apps_path, files_not_in_apps_path} =
@@ -64,13 +61,21 @@ defmodule Mix.Tasks.TestWithSummary do
       files = files_in_current_app_path ++ files_not_in_apps_path
 
       if files == [] and files_in_apps_path != [] do
-        IO.binwrite(logfile, inspect(files) <> " BANANA RUNNING recursing nothing to see here")
+        print_file(inspect(files) <> " BANANA RUNNING recursing nothing to see here")
         :ok
       else
-        IO.binwrite(logfile, inspect(files) <> " BANANA RUNNING recursing")
+        print_file(inspect(files) <> " BANANA RUNNING recursing")
         do_run([test_location_relative_path: "apps/#{app}"] ++ opts, args, files)
       end
     end
+  end
+
+  def print_file(message) do
+    {:ok, logfile} =
+      File.open("/Users/wanjal/dev/solveRepos/solvedata/solve/api/src/out-log.txt", [:write])
+
+    IO.binwrite(logfile, message)
+    File.close(logfile)
   end
 
   defp relative_app_file_exists?(file) do
