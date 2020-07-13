@@ -183,6 +183,7 @@ defmodule Mix.Tasks.TestWithSummary do
         :ok
     end
 
+    Mix.shell(shell)
     IO.inspect("after?", label: "BANANA")
   end
 
