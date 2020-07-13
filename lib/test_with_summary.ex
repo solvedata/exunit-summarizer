@@ -182,6 +182,8 @@ defmodule Mix.Tasks.TestWithSummary do
 
         :ok
     end
+
+    IO.inspect("after?", label: "BANANA")
   end
 
   defp raise_with_shell(shell, message) do
