@@ -1,8 +1,12 @@
-defmodule ExunitSummarizerTest do
+defmodule TestWithSummaryTest do
   use ExUnit.Case
-  doctest ExunitSummarizer
+  doctest Mix.Tasks.TestWithSummary
 
-  test "greets the world" do
-    assert ExunitSummarizer.hello() == :world
+  test "one that passes" do
+    assert 1 == 1
+  end
+
+  test "one that fails" do
+    assert 1 == 2
   end
 end
