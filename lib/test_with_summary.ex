@@ -44,7 +44,7 @@ defmodule Mix.Tasks.TestWithSummary do
     {opts, files} = OptionParser.parse!(args, strict: @switches)
 
     if not Mix.Task.recursing?() do
-      print_file(inspect(files) <> " BANANA RUNNING non recursing")
+      IO.inspect(files, label: " BANANA RUNNING non recursing") |> print_file()
       do_run(opts, args, files)
     else
       {files_in_apps_path, files_not_in_apps_path} =
@@ -61,10 +61,10 @@ defmodule Mix.Tasks.TestWithSummary do
       files = files_in_current_app_path ++ files_not_in_apps_path
 
       if files == [] and files_in_apps_path != [] do
-        print_file(inspect(files) <> " BANANA RUNNING recursing nothing to see here")
+        IO.inspect(files, label: " BANANA RUNNING recursing nothing to see here") |> print_file()
         :ok
       else
-        print_file(inspect(files) <> " BANANA RUNNING recursing")
+        IO.inspect(files, label: " BANANA RUNNING recursing") |> print_file()
         do_run([test_location_relative_path: "apps/#{app}"] ++ opts, args, files)
       end
     end
@@ -72,7 +72,7 @@ defmodule Mix.Tasks.TestWithSummary do
 
   def print_file(message) do
     {:ok, logfile} =
-      File.open("/Users/wanjal/dev/solveRepos/solvedata/solve/api/src/out-log.txt", [:write])
+      File.open("/Users/wanjal/dev/solveRepos/solvedata/solve/api/src/out-log.txt", [:append])
 
     IO.binwrite(logfile, message)
     File.close(logfile)
@@ -156,11 +156,8 @@ defmodule Mix.Tasks.TestWithSummary do
     display_warn_test_pattern(test_files, test_pattern, matched_test_files, warn_test_pattern)
 
     case CT.require_and_run(matched_test_files, test_paths, opts) do
-      {:ok, %{excluded: excluded, failures: failures, total: total}} ->
+      {:ok, result = %{excluded: excluded, failures: failures, total: total}} ->
         Mix.shell(shell)
-        IO.inspect(excluded, label: "BANANA excl")
-        IO.inspect(failures, label: "BANANA fails")
-        IO.inspect(total, label: "BANANA total")
         cover && cover.()
 
         cond do
@@ -178,6 +175,8 @@ defmodule Mix.Tasks.TestWithSummary do
             :ok
         end
 
+        result
+
       :noop ->
         cond do
           opts[:stale] ->
@@ -193,9 +192,6 @@ defmodule Mix.Tasks.TestWithSummary do
 
         :ok
     end
-
-    Mix.shell(shell)
-    IO.inspect("after?", label: "BANANA")
   end
 
   defp raise_with_shell(shell, message) do
