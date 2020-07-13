@@ -147,6 +147,9 @@ defmodule Mix.Tasks.TestWithSummary do
     case CT.require_and_run(matched_test_files, test_paths, opts) do
       {:ok, %{excluded: excluded, failures: failures, total: total}} ->
         Mix.shell(shell)
+        IO.inspect(excluded, label: "BANANA excl")
+        IO.inspect(failures, label: "BANANA fails")
+        IO.inspect(total, label: "BANANA total")
         cover && cover.()
 
         cond do
