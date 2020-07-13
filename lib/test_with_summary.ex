@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.ExunitSummarizer do
+defmodule Mix.Tasks.TestWithSummary do
   use Mix.Task
 
   @shortdoc "Runs exunit tests with a summary at the end"
