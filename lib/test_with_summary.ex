@@ -44,7 +44,7 @@ defmodule Mix.Tasks.TestWithSummary do
     {opts, files} = OptionParser.parse!(args, strict: @switches)
 
     if not Mix.Task.recursing?() do
-      IO.inspect(files, label: "BANANA RUNNING non recursing")
+      Mix.shell().info(inspect(files) <> " BANANA RUNNING non recursing")
       do_run(opts, args, files)
     else
       {files_in_apps_path, files_not_in_apps_path} =
@@ -61,10 +61,10 @@ defmodule Mix.Tasks.TestWithSummary do
       files = files_in_current_app_path ++ files_not_in_apps_path
 
       if files == [] and files_in_apps_path != [] do
-        IO.inspect(files, label: "BANANA RUNNING recursing nothing to see here")
+        Mix.shell().info(inspect(files) <> " BANANA RUNNING recursing nothing to see here")
         :ok
       else
-        IO.inspect(files, label: "BANANA RUNNING recursing")
+        Mix.shell().info(inspect(files) <> " BANANA RUNNING recursing")
         do_run([test_location_relative_path: "apps/#{app}"] ++ opts, args, files)
       end
     end
