@@ -7,7 +7,7 @@ defmodule Mix.Tasks.TestWithSummary do
 
   @compile {:no_warn_undefined, [ExUnit, ExUnit.Filters]}
   @shortdoc "Runs a project's tests"
-  @recursive true
+  @recursive false
   @preferred_cli_env :test
 
   @switches [
