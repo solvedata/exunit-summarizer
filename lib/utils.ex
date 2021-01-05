@@ -68,65 +68,72 @@ defmodule ExunitSummarizer.Utils do
     all_tests = get_all_tests()
     any_failed_tests? = all_tests |> Enum.any?(fn test -> test["failed"] end)
 
-    all_tests
-    |> Enum.group_by(fn test -> test["app"] end)
-    |> Enum.flat_map(fn {app, tests} ->
-      skipped_tests = tests |> Enum.filter(fn test -> test["skipped"] end)
-      failed_tests = tests |> Enum.filter(fn test -> test["failed"] end)
-      passed_tests = tests |> Enum.filter(fn test -> test["success"] end)
+    output =
+      all_tests
+      |> Enum.group_by(fn test -> test["app"] end)
+      |> Enum.flat_map(fn {app, tests} ->
+        skipped_tests = tests |> Enum.filter(fn test -> test["skipped"] end)
+        failed_tests = tests |> Enum.filter(fn test -> test["failed"] end)
+        passed_tests = tests |> Enum.filter(fn test -> test["success"] end)
 
-      report_first_line =
-        "\n#{app}: " <>
-          test_report_summary_line(
-            tests |> length(),
-            passed_tests |> length(),
-            failed_tests |> length(),
-            skipped_tests |> length()
-          )
+        report_first_line =
+          "\n#{app}: " <>
+            test_report_summary_line(
+              tests |> length(),
+              passed_tests |> length(),
+              skipped_tests |> length(),
+              failed_tests |> length()
+            )
 
-      failed_test_report_lines =
-        failed_tests
-        |> generate_tests_lines()
+        failed_test_report_lines =
+          failed_tests
+          |> generate_tests_lines()
 
-      skipped_test_report_lines =
-        skipped_tests
-        |> generate_tests_lines()
+        skipped_test_report_lines =
+          skipped_tests
+          |> generate_tests_lines()
 
-      slow_test_time = options |> Keyword.get(:slow_test_minimum_time, 0.5)
-      slow_test_report_count = options |> Keyword.get(:slow_test_report_count, 5)
+        slow_test_time = options |> Keyword.get(:slow_test_minimum_time, 0.5)
+        slow_test_report_count = options |> Keyword.get(:slow_test_report_count, 5)
 
-      slow_test_report_lines =
-        passed_tests
-        |> Enum.filter(fn test -> test["time"] >= slow_test_time end)
-        |> Enum.sort_by(fn test -> test["time"] end, :desc)
-        |> Enum.take(slow_test_report_count)
-        |> generate_tests_lines(show_time: true)
+        slow_test_report_lines =
+          passed_tests
+          |> Enum.filter(fn test -> test["time"] >= slow_test_time end)
+          |> Enum.sort_by(fn test -> test["time"] end, :desc)
+          |> Enum.take(slow_test_report_count)
+          |> generate_tests_lines(show_time: true)
 
-      cond do
-        failed_test_report_lines != [] ->
-          [report_first_line, "Failed tests:" | failed_test_report_lines]
+        cond do
+          failed_test_report_lines != [] ->
+            [report_first_line, "Failed tests:" | failed_test_report_lines]
 
-        any_failed_tests? ->
-          # Some tests failed, prevent outputting any extra
-          #  information that could muddy the build log
-          [report_first_line]
+          any_failed_tests? ->
+            # Some tests failed, prevent outputting any extra
+            #  information that could muddy the build log
+            [report_first_line]
 
-        true ->
-          report_lines =
-            if skipped_test_report_lines != [] do
-              [report_first_line, "Skipped tests:" | failed_test_report_lines]
+          true ->
+            report_lines =
+              if skipped_test_report_lines != [] do
+                [report_first_line, "Skipped tests:" | failed_test_report_lines]
+              else
+                [report_first_line]
+              end
+
+            if report_lines |> length() < 20 and slow_test_report_lines != [] do
+              report_lines ++ ["Slow running tests" | slow_test_report_lines]
             else
-              [report_first_line]
+              report_lines
             end
+        end
+      end)
+      |> Enum.join("\n")
 
-          if report_lines |> length() < 20 and slow_test_report_lines != [] do
-            report_lines ++ ["Slow running tests" | slow_test_report_lines]
-          else
-            report_lines
-          end
-      end
-    end)
-    |> Enum.join("\n")
+    if any_failed_tests? do
+      {:error, output}
+    else
+      {:ok, output}
+    end
   end
 
   def generate_tests_lines(tests, options \\ []) do

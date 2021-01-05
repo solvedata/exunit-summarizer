@@ -1,30 +1,4 @@
 defmodule ExunitSummarizer do
-  @moduledoc """
-  * A ExUnit.Formatter implementation that generates a xml in the format understood by JUnit.
-
-  To acomplish this, there are some mappings that are not straight one to one.
-  Therefore, here goes the mapping:
-
-  - JUnit - ExUnit
-  - Testsuites - :testsuite
-  - Testsuite - %ExUnit.TestCase{}
-  - failures = failures
-  - skipped = skip
-  - errors = invalid
-  - time = (sum of all times in seconds rounded down)
-  - Testcase - %ExUnit.Test
-  - name = :case
-  - test = :test
-  - content (only if not successful)
-  - skipped = {:state, {:skip, _}}
-  - failed = {:state, {:failed, {_, reason, stacktrace}}}
-  - reason = reason.message
-  - contet = Exception.format_stacktrace(stacktrace)
-  - error = {:invalid, module}
-
-  The report is written to a file in the _build directory.
-  """
-
   use GenServer
 
   @impl true
@@ -48,8 +22,12 @@ defmodule ExunitSummarizer do
   def handle_cast(_event, test_cases), do: {:noreply, test_cases}
 
   def write_report(test_cases) do
-    if Application.get_env(:exunit_json_formatter, :generate_report_file?, false) do
-      suites = test_cases |> Enum.map(fn test -> Jason.encode!(generate_testcases(test)) end)
+    if Application.get_env(:exunit_json_formatter, :generate_report_file?, true) do
+      # Reverse the list as test cases are added to the front of the list.
+      suites =
+        test_cases
+        |> Enum.reverse()
+        |> Enum.map(fn test -> Jason.encode!(generate_testcases(test)) end)
 
       # Create a JSON Stream, where each line is 1 test.
       # This makes it easier to combine results
@@ -97,7 +75,6 @@ defmodule ExunitSummarizer do
         body =
           test
           |> ExUnit.Formatter.format_test_failure(failures, 0, :infinity, fn _, msg -> msg end)
-          |> :erlang.binary_to_list()
 
         base |> Map.merge(%{failed: true, message: message(failures), body: body})
 

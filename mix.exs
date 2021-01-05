@@ -8,7 +8,6 @@ defmodule ExunitSummarizer.MixProject do
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      aliases: aliases(),
       elixirc_options: [warnings_as_errors: true]
     ]
   end
@@ -22,13 +21,6 @@ defmodule ExunitSummarizer.MixProject do
   defp deps do
     [
       {:jason, "~> 1.2"}
-    ]
-  end
-
-  defp aliases do
-    [
-      "test.report.clean": "run priv/clean.exs",
-      "test.report": "run priv/report.exs"
     ]
   end
 end
