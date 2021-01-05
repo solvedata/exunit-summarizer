@@ -115,7 +115,7 @@ defmodule ExunitSummarizer.Utils do
           true ->
             report_lines =
               if skipped_test_report_lines != [] do
-                [report_first_line, "Skipped tests:" | failed_test_report_lines]
+                [report_first_line, "Skipped tests:" | skipped_test_report_lines]
               else
                 [report_first_line]
               end
