@@ -65,7 +65,7 @@ defmodule ExunitSummarizer do
       %ExUnit.Test{state: nil} ->
         base |> Map.merge(%{success: true})
 
-      %ExUnit.Test{state: {:skip, message}} ->
+      %ExUnit.Test{state: {:skipped, message}} ->
         base |> Map.merge(%{skipped: true, message: message})
 
       %ExUnit.Test{state: {:excluded, message}} ->

@@ -24,8 +24,6 @@ defmodule Mix.Tasks.Test.Report do
     case ExunitSummarizer.Utils.generate_report() do
       {:ok, output} ->
         Mix.shell().info(output)
-        output |> IO.puts()
-        :ok
 
       {:error, output} ->
         Mix.shell().error(output)
