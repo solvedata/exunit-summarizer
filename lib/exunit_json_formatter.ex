@@ -38,7 +38,7 @@ defmodule ExunitSummarizer do
 
       :ok = File.write!(file_name, result, [:write])
 
-      if Application.get_env(:exunit_json_formatter, :print_report_filename?, false) do
+      if Application.get_env(:exunit_json_formatter, :print_report_filename?, true) do
         IO.puts(:stderr, "Wrote ExUnit report to: #{file_name}")
       end
     else

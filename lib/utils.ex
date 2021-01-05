@@ -64,6 +64,7 @@ defmodule ExunitSummarizer.Utils do
     "#{total} tests: #{test_count_parts |> Enum.join(", ")}"
   end
 
+  @spec get_all_tests_by_app(any) :: {:error, String.t()} | {:ok, String.t()}
   def get_all_tests_by_app(options \\ []) do
     all_tests = get_all_tests()
     any_failed_tests? = all_tests |> Enum.any?(fn test -> test["failed"] end)
@@ -144,6 +145,7 @@ defmodule ExunitSummarizer.Utils do
     end)
   end
 
+  @spec generate_test_lines(%{optional(String.t()) => any()}, keyword()) :: list(String.t())
   def generate_test_lines(test, options \\ []) do
     test_name = test["name"]
 
