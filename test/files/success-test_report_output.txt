@@ -1,0 +1,16 @@
+"mix test.report" is running in the "test" environment. The
+ environment should match the environment used to run tests. You
+ should set the "MIX_ENV" environment variable explicitly to avoid
+ this error.
+Assuming that this was a mistake and setting "MIX_ENV" to "test".
+
+[33m
+exunit_summarizer: 6 tests: 5 passed, 1 skipped[0m
+  Skipped tests:
+    Elixir.TestWithSummaryTest
+      [33mtest one that skipped[0m
+      - test/exunit_summarizer_test.exs:20
+  Slow running tests:
+    Elixir.TestWithSummaryTest
+      test slow test  (2.0s)
+      - test/exunit_summarizer_test.exs:24
