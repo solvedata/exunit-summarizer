@@ -23,11 +23,12 @@ defmodule ExunitSummarizer do
 
   def write_report(test_cases) do
     if Application.get_env(:exunit_json_formatter, :generate_report_file?, true) do
+      config = %{colors: ExunitSummarizer.ExUnitUtils.color_config()}
       # Reverse the list as test cases are added to the front of the list.
       suites =
         test_cases
         |> Enum.reverse()
-        |> Enum.map(fn test -> Jason.encode!(generate_testcases(test)) end)
+        |> Enum.map(fn test -> test |> generate_testcases(config) |> Jason.encode!() end)
 
       # Create a JSON Stream, where each line is 1 test.
       # This makes it easier to combine results
@@ -46,7 +47,7 @@ defmodule ExunitSummarizer do
     end
   end
 
-  def generate_testcases(test = %ExUnit.Test{}) do
+  def generate_testcases(test = %ExUnit.Test{}, config) do
     base =
       test.tags
       |> Map.take([:file, :line, :describe, :describe_line, :test_type])
@@ -75,7 +76,12 @@ defmodule ExunitSummarizer do
       %ExUnit.Test{state: {:failed, failures}} ->
         body =
           test
-          |> ExUnit.Formatter.format_test_failure(failures, 0, :infinity, fn _, msg -> msg end)
+          |> ExUnit.Formatter.format_test_failure(
+            failures,
+            0,
+            :infinity,
+            &ExunitSummarizer.ExUnitUtils.formatter(&1, &2, config)
+          )
 
         base |> Map.merge(%{failed: true, message: message(failures), body: body})
 

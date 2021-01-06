@@ -36,6 +36,7 @@ assert_report_json_mostly_equal() {
 assert_file_equal() {
   local -r test_file="$1"
   local -r sample_file="$2"
+
   if diff --text "${test_file}" "${sample_file}"; then
     echo "[PASS] Files are identical: ${test_file} == ${sample_file}"
   else
@@ -177,6 +178,7 @@ run_report_clean_test() {
 }
 
 main () {
+  export MIX_TEST_REPORT_COLOR=1
   run_code_tests
 
   run_success_report_test

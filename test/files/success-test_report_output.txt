@@ -4,11 +4,11 @@
  this error.
 Assuming that this was a mistake and setting "MIX_ENV" to "test".
 
-
-exunit_summarizer: 6 tests: 5 passed, 1 skipped, 0 failed
+[33m
+exunit_summarizer: 6 tests: 5 passed, 1 skipped[0m
   Skipped tests:
     Elixir.TestWithSummaryTest
-      test one that skipped
+      [33mtest one that skipped[0m
       - test/exunit_summarizer_test.exs:20
   Slow running tests:
     Elixir.TestWithSummaryTest

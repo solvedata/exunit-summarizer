@@ -11,18 +11,28 @@ defmodule ExunitSummarizer.Reporter do
     |> Enum.map(fn line -> line |> Jason.decode!() end)
   end
 
-  def test_report_summary_line(total, passed, skipped, failed) do
+  def test_report_summary_line(
+        %{
+          app: app,
+          any_failed_tests?: any_failed_tests?,
+          total: total,
+          passed: passed,
+          skipped: skipped,
+          failed: failed
+        },
+        config
+      ) do
     test_count_parts = []
 
     test_count_parts =
-      if failed do
+      if failed > 0 do
         ["#{failed} failed" | test_count_parts]
       else
         test_count_parts
       end
 
     test_count_parts =
-      if skipped do
+      if skipped > 0 do
         ["#{skipped} skipped" | test_count_parts]
       else
         test_count_parts
@@ -30,11 +40,19 @@ defmodule ExunitSummarizer.Reporter do
 
     test_count_parts = ["#{passed} passed" | test_count_parts]
 
-    "#{total} tests: #{test_count_parts |> Enum.join(", ")}"
+    result = "\n#{app}: #{total} tests: #{test_count_parts |> Enum.join(", ")}"
+
+    cond do
+      failed > 0 -> ExunitSummarizer.ExUnitUtils.failure(result, config)
+      !any_failed_tests? && skipped > 0 -> ExunitSummarizer.ExUnitUtils.skipped(result, config)
+      !any_failed_tests? -> ExunitSummarizer.ExUnitUtils.success(result, config)
+      true -> result
+    end
   end
 
   @spec get_all_tests_by_app(any) :: {:error, String.t()} | {:ok, String.t()}
   def get_all_tests_by_app(options \\ []) do
+    config = %{colors: ExunitSummarizer.ExUnitUtils.color_config()}
     all_tests = get_all_tests()
     any_failed_tests? = all_tests |> Enum.any?(fn test -> test["failed"] end)
 
@@ -48,21 +66,25 @@ defmodule ExunitSummarizer.Reporter do
         passed_tests = tests |> Enum.filter(fn test -> test["success"] end)
 
         report_first_line =
-          "\n#{app}: " <>
-            test_report_summary_line(
-              tests |> length(),
-              passed_tests |> length(),
-              skipped_tests |> length(),
-              failed_tests |> length()
-            )
+          test_report_summary_line(
+            %{
+              app: app,
+              any_failed_tests?: any_failed_tests?,
+              total: tests |> length(),
+              passed: passed_tests |> length(),
+              skipped: skipped_tests |> length(),
+              failed: failed_tests |> length()
+            },
+            config
+          )
 
         failed_test_report_lines =
           failed_tests
-          |> generate_tests_lines(show_body: true)
+          |> generate_tests_lines(config, show_body: true)
 
         skipped_test_report_lines =
           skipped_tests
-          |> generate_tests_lines()
+          |> generate_tests_lines(config)
 
         slow_test_time = options |> Keyword.get(:slow_test_minimum_time, 0.5)
         slow_test_report_count = options |> Keyword.get(:slow_test_report_count, 5)
@@ -72,7 +94,7 @@ defmodule ExunitSummarizer.Reporter do
           |> Enum.filter(fn test -> test["time"] >= slow_test_time end)
           |> Enum.sort_by(fn test -> test["time"] end, :desc)
           |> Enum.take(slow_test_report_count)
-          |> generate_tests_lines(show_time: true)
+          |> generate_tests_lines(config, show_time: true)
 
         report_content =
           cond do
@@ -111,19 +133,27 @@ defmodule ExunitSummarizer.Reporter do
     end
   end
 
-  def generate_tests_lines(tests, options \\ []) do
+  def generate_tests_lines(tests, config, options \\ []) do
     tests
     |> Enum.group_by(fn test -> test["classname"] end)
     |> Enum.flat_map(fn {class, tests} ->
       [
         "#{class}"
-        | tests |> Enum.flat_map(&generate_test_lines(&1, options)) |> Utils.indent(base_indent())
+        | tests
+          |> Enum.flat_map(&generate_test_lines(&1, config, options))
+          |> Utils.indent(base_indent())
       ]
     end)
   end
 
-  @spec generate_test_lines(%{optional(String.t()) => any()}, keyword()) :: list(String.t())
-  def generate_test_lines(test, options \\ []) do
+  def generate_test_lines(test, config, options \\ []) do
+    test_coloriser =
+      cond do
+        test["failed"] -> &ExunitSummarizer.ExUnitUtils.failure/2
+        test["skipped"] -> &ExunitSummarizer.ExUnitUtils.skipped/2
+        true -> fn msg, _ -> msg end
+      end
+
     test_name = test["name"]
 
     test_time =
@@ -155,7 +185,7 @@ defmodule ExunitSummarizer.Reporter do
               |> Utils.remove_consecutive_newlines_preserving_ansi_codes()
               |> Utils.indent(base_indent())
 
-            ["logs:" | log_lines]
+            [ExunitSummarizer.ExUnitUtils.formatter(:extra_info, "logs:", config) | log_lines]
           else
             []
           end
@@ -168,7 +198,7 @@ defmodule ExunitSummarizer.Reporter do
     test_line = test["line"]
 
     [
-      "#{test_name}#{test_time}",
+      test_coloriser.("#{test_name}#{test_time}", config),
       "- #{test_file}:#{test_line}"
     ] ++ test_body
   end
