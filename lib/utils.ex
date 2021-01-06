@@ -1,170 +1,76 @@
 defmodule ExunitSummarizer.Utils do
-  def get_report_folder() do
-    Path.join(Mix.Project.build_path(), "test_reports")
+  @spec indent(String.t() | list(String.t()), binary | non_neg_integer) :: list(String.t())
+  def indent(lines, spaces) when is_integer(spaces) do
+    # Use non-breaking spaces to trick Drone into looking half decent.
+    indent(lines, String.duplicate("\u00A0", spaces))
   end
 
-  def get_report_file_suffix() do
-    "-tests.json"
+  def indent(lines, prefix) when is_binary(prefix) do
+    lines |> normalise_line_list() |> Enum.map(fn line -> prefix <> line end)
   end
 
-  def get_report_file_path do
-    reports_folder = get_report_folder()
-
-    report_file =
-      Path.join(reports_folder, "#{Mix.Project.config()[:app]}#{get_report_file_suffix()}")
-
-    if not File.dir?(reports_folder) do
-      File.mkdir!(reports_folder)
-    end
-
-    report_file
+  @spec normalise_line_list(String.t() | list(String.t())) :: list(String.t())
+  def normalise_line_list(lines) when is_list(lines) do
+    lines |> Enum.flat_map(fn line -> String.split(line, "\n") end)
   end
 
-  def get_all_report_file_paths() do
-    folder = get_report_folder()
-
-    folder
-    |> File.ls!()
-    |> Enum.filter(fn filename -> filename |> String.ends_with?(get_report_file_suffix()) end)
-    |> Enum.sort()
-    |> Enum.map(&Path.join(folder, &1))
+  def normalise_line_list(lines) when is_binary(lines) do
+    lines |> String.split("\n")
   end
 
-  def clean_all_report_files() do
-    get_all_report_file_paths() |> Enum.map(&File.rm!/1)
-  end
+  def strip_common_indent(lines) do
+    lines = lines |> normalise_line_list()
 
-  def get_all_tests() do
-    get_all_report_file_paths()
-    |> Enum.map(&File.read!/1)
-    |> Enum.flat_map(&String.split(&1, "\n"))
-    |> Enum.filter(fn line -> line != "" end)
-    |> Enum.map(fn line -> line |> Jason.decode!() end)
-  end
-
-  def test_report_summary_line(total, passed, skipped, failed) do
-    test_count_parts = []
-
-    test_count_parts =
-      if failed do
-        ["#{failed} failed" | test_count_parts]
-      else
-        test_count_parts
-      end
-
-    test_count_parts =
-      if skipped do
-        ["#{skipped} skipped" | test_count_parts]
-      else
-        test_count_parts
-      end
-
-    test_count_parts = ["#{passed} passed" | test_count_parts]
-
-    "#{total} tests: #{test_count_parts |> Enum.join(", ")}"
-  end
-
-  @spec get_all_tests_by_app(any) :: {:error, String.t()} | {:ok, String.t()}
-  def get_all_tests_by_app(options \\ []) do
-    all_tests = get_all_tests()
-    any_failed_tests? = all_tests |> Enum.any?(fn test -> test["failed"] end)
-
-    output =
-      all_tests
-      |> Enum.group_by(fn test -> test["app"] end)
-      |> Enum.flat_map(fn {app, tests} ->
-        skipped_tests = tests |> Enum.filter(fn test -> test["skipped"] end)
-        failed_tests = tests |> Enum.filter(fn test -> test["failed"] end)
-        passed_tests = tests |> Enum.filter(fn test -> test["success"] end)
-
-        report_first_line =
-          "\n#{app}: " <>
-            test_report_summary_line(
-              tests |> length(),
-              passed_tests |> length(),
-              skipped_tests |> length(),
-              failed_tests |> length()
-            )
-
-        failed_test_report_lines =
-          failed_tests
-          |> generate_tests_lines()
-
-        skipped_test_report_lines =
-          skipped_tests
-          |> generate_tests_lines()
-
-        slow_test_time = options |> Keyword.get(:slow_test_minimum_time, 0.5)
-        slow_test_report_count = options |> Keyword.get(:slow_test_report_count, 5)
-
-        slow_test_report_lines =
-          passed_tests
-          |> Enum.filter(fn test -> test["time"] >= slow_test_time end)
-          |> Enum.sort_by(fn test -> test["time"] end, :desc)
-          |> Enum.take(slow_test_report_count)
-          |> generate_tests_lines(show_time: true)
-
-        cond do
-          failed_test_report_lines != [] ->
-            [report_first_line, "Failed tests:" | failed_test_report_lines]
-
-          any_failed_tests? ->
-            # Some tests failed, prevent outputting any extra
-            #  information that could muddy the build log
-            [report_first_line]
-
-          true ->
-            report_lines =
-              if skipped_test_report_lines != [] do
-                [report_first_line, "Skipped tests:" | skipped_test_report_lines]
-              else
-                [report_first_line]
-              end
-
-            if report_lines |> length() < 20 and slow_test_report_lines != [] do
-              report_lines ++ ["Slow running tests" | slow_test_report_lines]
-            else
-              report_lines
-            end
+    min_indent =
+      lines
+      |> Enum.flat_map(fn line ->
+        deindented_chars = line |> String.trim_leading() |> String.length()
+        # If the line is empty, ignore it. Otherwise return the number of characters removed .
+        if deindented_chars == 0 do
+          []
+        else
+          [(line |> String.length()) - deindented_chars]
         end
       end)
-      |> Enum.join("\n")
+      |> Enum.min(fn -> 0 end)
 
-    if any_failed_tests? do
-      {:error, output}
-    else
-      {:ok, output}
-    end
-  end
-
-  def generate_tests_lines(tests, options \\ []) do
-    tests
-    |> Enum.group_by(fn test -> test["classname"] end)
-    |> Enum.flat_map(fn {class, tests} ->
-      [" #{class}" | tests |> Enum.flat_map(&generate_test_lines(&1, options))]
+    lines
+    |> Enum.map(fn line ->
+      {_indent, deindented_line} = line |> String.split_at(min_indent)
+      deindented_line
     end)
   end
 
-  @spec generate_test_lines(%{optional(String.t()) => any()}, keyword()) :: list(String.t())
-  def generate_test_lines(test, options \\ []) do
-    test_name = test["name"]
+  def remove_consecutive_newlines_preserving_ansi_codes(lines) do
+    line_contains_only_ansi_codes_regex = ~r|^(?:\x1b(?:\[[0-9;]*[A-HJKSTfimnsu]))+$|
+    lines = lines |> normalise_line_list()
 
-    test_time =
-      if options |> Keyword.get(:show_time) do
-        "  (#{test["time"] |> Float.round(2) |> Float.to_string()}s)"
-      else
-        ""
-      end
+    if lines |> Enum.empty?() do
+      []
+    else
+      {{_is_ansi, prev_line}, lines} =
+        lines
+        |> Enum.reduce({{true, ""}, []}, fn line, {{is_prev_line_ansi_only, prev_line}, lines} ->
+          # Does the line contain at least one ANSI code, and only ANSI codes.
+          # An empty string will result in `line_contains_only_ansi_codes = false`.
+          line_contains_only_ansi_codes =
+            line |> String.match?(line_contains_only_ansi_codes_regex)
 
-    test_file = test["file"] |> Path.relative_to_cwd()
-    test_line = test["line"]
+          if line_contains_only_ansi_codes do
+            {{is_prev_line_ansi_only, prev_line <> line}, lines}
+          else
+            # This line is not blank
+            # If the previous line was only ansi codes, append this line to the previous line
+            # Otherwise add the previous line to the `lines` list and this line will become the previous line for the next iteration.
+            if is_prev_line_ansi_only do
+              {{false, prev_line <> line}, lines}
+            else
+              {{false, line}, [prev_line | lines]}
+            end
+          end
+        end)
 
-    [
-      "  #{test_name}#{test_time}  --  #{test_file}:#{test_line}"
-    ]
-  end
-
-  def generate_report() do
-    get_all_tests_by_app()
+      [prev_line | lines] |> Enum.reverse()
+    end
   end
 end

@@ -1,0 +1,24 @@
+
+exunit_summarizer: 6 tests: 3 passed, 1 skipped, 2 failed
+  Failed tests:
+    Elixir.TestWithSummaryTest
+      test one that fails when MAKE_TESTS_FAIL != ""
+      - test/exunit_summarizer_test.exs:13
+        Assertion with == failed
+        code:  assert @should_fail == ""
+        left:  "this test intentionally fails"
+        right: ""
+        stacktrace:
+          test/exunit_summarizer_test.exs:16: (test)
+        logs:
+          [33m[warn] This should output.
+          [0m[31m[error] This should show an error.[0m
+      test a describe block one that fails when MAKE_TESTS_FAIL != ""
+      - test/exunit_summarizer_test.exs:35
+        Assertion with == failed
+        code:  assert @should_fail == ""
+        left:  "this test intentionally fails"
+        right: ""
+        stacktrace:
+          test/exunit_summarizer_test.exs:36: (test)
+** (Mix) One or more tests in the report failed.

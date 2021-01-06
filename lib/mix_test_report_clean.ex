@@ -20,6 +20,6 @@ defmodule Mix.Tasks.Test.Report.Clean do
       """)
     end
 
-    ExunitSummarizer.Utils.clean_all_report_files()
+    ExunitSummarizer.ReportFiles.clean_all_report_files()
   end
 end

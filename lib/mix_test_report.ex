@@ -20,12 +20,12 @@ defmodule Mix.Tasks.Test.Report do
       """)
     end
 
-    case ExunitSummarizer.Utils.generate_report() do
+    case ExunitSummarizer.Reporter.generate_report() do
       {:ok, output} ->
         Mix.shell().info(output)
 
       {:error, output} ->
-        Mix.shell().error(output)
+        Mix.shell().info(output)
         Mix.raise("One or more tests in the report failed.")
     end
   end

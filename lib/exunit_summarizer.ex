@@ -34,7 +34,7 @@ defmodule ExunitSummarizer do
       result = suites |> Enum.join("\n")
 
       # save the report in an json file
-      file_name = ExunitSummarizer.Utils.get_report_file_path()
+      file_name = ExunitSummarizer.ReportFiles.get_report_file_path()
 
       :ok = File.write!(file_name, result, [:write])
 
@@ -54,6 +54,7 @@ defmodule ExunitSummarizer do
         app: Mix.Project.config()[:app],
         classname: Atom.to_string(test.case),
         name: Atom.to_string(test.name),
+        logs: test.logs,
         # Time is stored in microseconds, normalize to seconds.
         time: test.time / 1_000_000,
         success: false,
