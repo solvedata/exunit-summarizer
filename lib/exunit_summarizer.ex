@@ -8,6 +8,14 @@ defmodule ExunitSummarizer do
 
   @impl true
   def handle_cast({:suite_finished, _run_us, _load_us}, test_cases) do
+    # Elixir <= 1.11
+    write_report(test_cases)
+
+    {:noreply, test_cases}
+  end
+
+  def handle_cast({:suite_finished, _times_us}, test_cases) do
+    # Elixir >= 1.12
     write_report(test_cases)
 
     {:noreply, test_cases}
