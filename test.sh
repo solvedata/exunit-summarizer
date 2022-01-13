@@ -20,7 +20,7 @@ readonly SAMPLE_FAILURE_TEST_REPORT_OUTPUT="./test/files/failure-test_report_out
 
 normalise_report_json() {
   local -r report_file="$1"
-  # Round to whole seconds.
+  # Round to whole seconds & remove the root directory from the fully qualified path
   jq --arg root_dir "${DIR}" -c '. + {time: (.time | round), file: (.file | sub($root_dir; "<ROOT>"))}' "${report_file}"
 }
 
