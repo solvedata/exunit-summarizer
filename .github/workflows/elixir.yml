@@ -1,0 +1,42 @@
+name: Elixir CI
+
+on:
+  push:
+    branches: *
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Elixir
+      uses: erlef/setup-beam@988e02bfe678367a02564f65ca2e37726dc0268f
+      with:
+        elixir-version: '1.12.3'
+        otp-version: '24.1'
+    - name: Restore dependencies cache
+      uses: actions/cache@v2
+      with:
+        path: deps
+        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+        restore-keys: ${{ runner.os }}-mix-
+    - name: Install JQ
+      run: apt-get update && apt-get install jq
+    - name: Install dependencies
+      run: mix deps.get
+    - name: Run tests
+      run: ./test.sh
+    - name: Run tests
+      run: ./test.sh
+
+  lint:
+    name: Shell script linting
+    runs-on: ubuntu-latest
+    steps:
+    - name: ShellCheck
+      # You may pin to the exact commit or the version.
+      # uses: ludeeus/action-shellcheck@94e0aab03ca135d11a35e5bfc14e6746dc56e7e9
+      uses: ludeeus/action-shellcheck@1.1.0
+      with:
