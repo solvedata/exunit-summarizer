@@ -6,6 +6,8 @@ set -euo pipefail
 [ -n "${DEBUG:-}" ] && set -x
 IFS=$'\n\t'
 
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+
 # End of boilerplate
 
 readonly TEST_REPORT_DIR="./_build/test/test_reports"
@@ -18,17 +20,22 @@ readonly SAMPLE_FAILURE_TEST_REPORT_OUTPUT="./test/files/failure-test_report_out
 
 normalise_report_json() {
   local -r report_file="$1"
-  # Round to whole seconds.
-  jq -c '. + {time: (.time | round)}' "${report_file}"
+  # Round to whole seconds & remove the root directory from the fully qualified path
+  jq --arg root_dir "${DIR}" -c '. + {time: (.time | round), file: (.file | sub($root_dir; "<ROOT>"))}' "${report_file}"
 }
 
 assert_report_json_mostly_equal() {
   local -r test_file="$1"
   local -r sample_file="$2"
-  if diff --text <(normalise_report_json "${test_file}") <(normalise_report_json "${sample_file}"); then
-    echo "[PASS] Report JSON files are (effectively) identical: ${test_file} == ${sample_file}"
+
+  local -r normalised_test_file="${test_file}.normalised"
+  # Apply the normalisation before checking for equality
+  normalise_report_json "${test_file}" > "${normalised_test_file}"
+
+  if diff --text "${normalised_test_file}" "${sample_file}"; then
+    echo "[PASS] Report JSON files are (effectively) identical: ${normalised_test_file} == ${sample_file}"
   else
-    echo "[FAIL] Report JSON files differ(in a way that matters). See output above: ${test_file} == ${sample_file}"
+    echo "[FAIL] Report JSON files differ(in a way that matters). See output above: ${normalised_test_file} == ${sample_file}"
     return 4
   fi
 }

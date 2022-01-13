@@ -5,7 +5,7 @@ defmodule ExunitSummarizer.MixProject do
     [
       app: :exunit_summarizer,
       version: "0.1.0",
-      elixir: "~> 1.10.0 or ~> 1.11.0 or ~>1.12.0",
+      elixir: "~>1.11.0 or ~>1.12.0 or ~>1.13.0",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       elixirc_options: [warnings_as_errors: true]

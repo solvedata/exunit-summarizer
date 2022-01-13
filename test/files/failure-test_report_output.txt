@@ -11,7 +11,7 @@ exunit_summarizer: 6 tests: 3 passed, 1 skipped, 2 failed[0m
         [36mstacktrace:[0m
           test/exunit_summarizer_test.exs:16: (test)
         [36mlogs:[0m
-          [33m[warn] This should output.
+          [33m[warning] This should output.
           [0m[31m[error] This should show an error.[0m
       [31mtest a describe block one that fails when MAKE_TESTS_FAIL != ""[0m
       - test/exunit_summarizer_test.exs:35

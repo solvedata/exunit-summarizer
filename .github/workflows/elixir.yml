@@ -1,0 +1,51 @@
+name: Elixir CI
+
+on:
+  push:
+    branches:
+      - "*"
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          # Cannot test across 1.12 and 1.13 as 1.13's logging library changes
+          #  the output of warnings from '[warn]' to '[warning]' making tests
+          #  fail.
+          - elixir_version: '1.13.1'
+            otp_version: '24.2'
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Elixir
+      uses: erlef/setup-beam@988e02bfe678367a02564f65ca2e37726dc0268f
+      with:
+        elixir-version: ${{ matrix.elixir_version }}
+        otp-version: ${{ matrix.otp_version }}
+    - name: Restore dependencies cache
+      uses: actions/cache@v2
+      with:
+        path: deps
+        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+        restore-keys: ${{ runner.os }}-mix-
+    - name: Install JQ
+      run: sudo apt-get update && sudo apt-get -y install tree
+    - name: Install dependencies
+      run: mix deps.get
+    - name: Run tests
+      run: ./test.sh
+    - name: Run tests
+      run: ./test.sh
+
+  lint:
+    name: Shell script linting
+    runs-on: ubuntu-latest
+    steps:
+    - name: ShellCheck
+      # You may pin to the exact commit or the version.
+      # uses: ludeeus/action-shellcheck@94e0aab03ca135d11a35e5bfc14e6746dc56e7e9
+      uses: ludeeus/action-shellcheck@1.1.0
