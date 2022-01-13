@@ -10,6 +10,16 @@ jobs:
     name: Build and test
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        # Test across all supported elixir versions.
+        include:
+          - elixir-version: '1.12.3'
+            otp-version: '24.1'
+          - elixir-version: '1.13.1'
+            otp-version: '24.1'
+
+
     steps:
     - uses: actions/checkout@v2
     - name: Set up Elixir
