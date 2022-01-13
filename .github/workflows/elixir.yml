@@ -12,14 +12,12 @@ jobs:
 
     strategy:
       matrix:
-        # Test across all supported elixir versions.
         include:
-          - elixir_version: '1.11.4'
-            otp_version: '24.1'
-          - elixir_version: '1.12.3'
-            otp_version: '24.1'
+          # Cannot test across 1.12 and 1.13 as 1.13's logging library changes
+          #  the output of warnings from '[warn]' to '[warning]' making tests
+          #  fail.
           - elixir_version: '1.13.1'
-            otp_version: '24.1'
+            otp_version: '24.2'
 
     steps:
     - uses: actions/checkout@v2

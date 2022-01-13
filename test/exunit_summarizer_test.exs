@@ -6,12 +6,12 @@ defmodule TestWithSummaryTest do
   @should_slow System.get_env("MAKE_TESTS_SLOW", "")
 
   test "one that passes" do
-    Logger.warn("This should not output")
+    Logger.warning("This should not output")
     assert 1 == 1
   end
 
   test "one that fails when MAKE_TESTS_FAIL != \"\"" do
-    Logger.warn("This should output.")
+    Logger.warning("This should output.")
     Logger.error("This should show an error.")
     assert @should_fail == ""
   end
